@@ -3,7 +3,12 @@ import type { AnyPgTable, PgColumn } from "drizzle-orm/pg-core";
 import { t } from "elysia";
 
 const RESERVED = new Set(["page", "limit", "search", "sort", "order"]);
-const BOOLEAN_FIELDS = new Set(["isPremium", "isSample", "is_premium", "is_sample"]);
+const BOOLEAN_FIELDS = new Set([
+	"isPremium",
+	"isSample",
+	"is_premium",
+	"is_sample",
+]);
 
 export interface ParsedQuery {
 	page: number;
@@ -99,14 +104,20 @@ export function buildQuery<T extends AnyPgTable>(
 			// continue;
 
 			const columnName = (col as any).name;
-			const processedValues = columnName && BOOLEAN_FIELDS.has(columnName) ? values.map(v => {
-				const lowerV = String(v).toLowerCase();
-				return lowerV === 'true' || lowerV === '1' ? true:
-				lowerV === 'false' || lowerV === '0' ? false:
-				v;
-			}) : values;
+			const processedValues =
+				columnName && BOOLEAN_FIELDS.has(columnName)
+					? values.map((v) => {
+							const lowerV = String(v).toLowerCase();
+							return lowerV === "true" || lowerV === "1"
+								? true
+								: lowerV === "false" || lowerV === "0"
+									? false
+									: v;
+						})
+					: values;
 
-			if (processedValues.length === 1) whereParts.push(eq(col, processedValues[0]));
+			if (processedValues.length === 1)
+				whereParts.push(eq(col, processedValues[0]));
 			else whereParts.push(orJoin(processedValues.map((v) => eq(col, v))));
 			continue;
 		}
@@ -166,8 +177,6 @@ function parseFilterKey(key: string): { baseKey: string; op: Operator } {
 }
 
 function buildOp(col: PgColumn<any>, op: Operator, val: string): SQL {
-
-
 	switch (op) {
 		case "like":
 			return ilike(col, `%${val}%`);
