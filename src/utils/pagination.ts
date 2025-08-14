@@ -1,5 +1,5 @@
 import { t } from "elysia";
-import { sql, SQL } from "drizzle-orm";
+import { sql, SQL, and } from "drizzle-orm";
 import type { AnyPgTable } from "drizzle-orm/pg-core";
 import { buildQuery, parseQuery, ParsedQuery } from "./query";
 
@@ -29,6 +29,7 @@ export async function paginateTable<TTable extends AnyPgTable, TRow>(
 		filterable?: (keyof TTable["_"]["columns"])[];
 		sortable?: (keyof TTable["_"]["columns"])[];
 		select?: SQL<unknown>;
+		where?: SQL<unknown>;
 		hook?(rows: TRow[]): Promise<TRow[]> | TRow[];
 		defaultSort?: {
 			column: keyof TTable["_"]["columns"];
@@ -42,6 +43,7 @@ export async function paginateTable<TTable extends AnyPgTable, TRow>(
 		filterable = [],
 		sortable = [],
 		select,
+		where,
 		hook,
 		defaultSort,
 	} = args;
@@ -65,8 +67,11 @@ export async function paginateTable<TTable extends AnyPgTable, TRow>(
 		}
 	}
 
+	const finalWhere =
+		built.where && where ? and(built.where, where) : built.where || where;
+
 	let countQuery = db.select({ count: sql<number>`count(*)` }).from(table);
-	if (built.where) countQuery = countQuery.where(built.where as any);
+	if (finalWhere) countQuery = countQuery.where(finalWhere as any);
 	const [{ count }] = await countQuery;
 
 	let dataQuery = db.select(select || undefined).from(table);
@@ -97,3 +102,4 @@ export async function paginateFromRaw<TTable extends AnyPgTable, TRow>(
 	const parsed = parseQuery(rawQuery);
 	return paginateTable<TTable, TRow>(db, table, { ...cfg, parsed });
 }
+
