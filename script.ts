@@ -148,6 +148,7 @@ export async function listDeleted${toPascalCase(moduleName)}(rawQuery: Record<st
 	const validationContent = `import { t } from "elysia";
 import { spread } from "../../utils/spread";
 import { ${moduleName} } from "./model";
+import { makePaginatedResponse } from "../../utils/pagination";
 
 const insert${toPascalCase(moduleName)} = spread(${moduleName}, "insert");
 const select${toPascalCase(moduleName)} = spread(${moduleName}, "select");
@@ -172,11 +173,18 @@ export type ${toPascalCase(moduleName)}CreateBody = typeof ${toCamelCase(moduleN
 export type ${toPascalCase(moduleName)}UpdateBody = typeof ${toCamelCase(moduleName)}UpdateBody.static;
 export type ${toPascalCase(moduleName)}Response = typeof ${toCamelCase(moduleName)}Response.static;
 export type ${toPascalCase(moduleName)}ListResponse = typeof ${toCamelCase(moduleName)}ListResponse.static;
+
+export const paginated${toPascalCase(moduleName)}Response = makePaginatedResponse(${toCamelCase(moduleName)}Response);
+export const notFoundResponse = t.Object({ message: t.String() });
+export const deleteResponse = t.Object({ deleted: t.String() });
+export const restoreResponse = t.Object({ restored: t.String() });
 `;
 
 	// Generate index.ts with soft delete endpoints
 	const indexContent = `import Elysia, { t } from "elysia";
-import { ${toCamelCase(moduleName)}CreateBody, ${toCamelCase(moduleName)}UpdateBody, ${toCamelCase(moduleName)}Response } from "./validation";
+import { ${toCamelCase(moduleName)}CreateBody, ${toCamelCase(moduleName)}UpdateBody, ${toCamelCase(moduleName)}Response, 
+    paginated${toPascalCase(moduleName)}Response, notFoundResponse, deleteResponse, restoreResponse,
+} from "./validation";
 import {
     create${toPascalCase(moduleName)},
     list${toPascalCase(moduleName)},
@@ -187,12 +195,7 @@ import {
     hardDelete${toPascalCase(moduleName)},
     listDeleted${toPascalCase(moduleName)},
 } from "./service";
-import { makePaginatedResponse } from "../../utils/pagination";
 
-const paginated${toPascalCase(moduleName)}Response = makePaginatedResponse(${toCamelCase(moduleName)}Response);
-const notFoundResponse = t.Object({ message: t.String() });
-const deleteResponse = t.Object({ deleted: t.String() });
-const restoreResponse = t.Object({ restored: t.String() });
 
 export const ${toCamelCase(moduleName)}Routes = new Elysia({ prefix: "/${moduleName}" })
     // List active (non-deleted) records
